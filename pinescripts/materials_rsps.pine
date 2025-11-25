@@ -1,0 +1,278 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © unicorpusstocks
+
+// note:
+// I especially don't use for-loops in this file, due to it getting to unprecise. 
+// Everything is calculated semi-individual to reduce errors and noise
+
+
+
+//@version=5
+indicator("Materials RSPS", max_bars_back = 100)
+
+
+import Unicorpus/NormalizedIndicators/1 as L
+
+
+//Getting values
+get_data(string input) =>
+    request.security(input, timeframe.period, close)
+
+
+//Symbols
+
+//benchmark
+usdt = get_data("CRYPTO:USDTUSD")
+xlb = get_data("XLB")
+
+//assets - Materials (Grundstoffe)
+lin = get_data("LIN")
+apd = get_data("APD")
+shw = get_data("SHW")
+ecl = get_data("ECL")
+dd = get_data("DD")
+nue = get_data("NUE")
+fcx = get_data("FCX")
+nem = get_data("NEM")
+dow = get_data("DOW")
+ppg = get_data("PPG")
+alb = get_data("ALB")
+ce = get_data("CE")
+vmhc = get_data("VMC")
+
+
+//======================================================
+
+
+
+get_rsps(asset) =>
+
+    math.avg(nz(L.qqq_4d_cal(asset == lin ? lin : asset / lin)), nz(L.qqq_4d_cal(asset))) <= 0.1 ? -0.5 : math.avg(
+
+        
+         nz(L.qqq_4d_cal(asset == xlb ? xlb : asset / xlb)),
+         nz(L.qqq_4d_cal(asset == lin ? lin : asset / lin)),
+         
+         nz(L.qqq_4d_cal(asset == apd ? apd : asset / apd)),
+         nz(L.qqq_4d_cal(asset == shw ? shw : asset / shw)),
+        
+         nz(L.qqq_4d_cal(asset == ecl ? ecl : asset / ecl)),
+         nz(L.qqq_4d_cal(asset == dd ? dd : asset / dd)),
+         nz(L.qqq_4d_cal(asset == nue ? nue : asset / nue)),
+         nz(L.qqq_4d_cal(asset == fcx ? fcx : asset / fcx)),
+         nz(L.qqq_4d_cal(asset == nem ? nem : asset / nem)),
+         nz(L.qqq_4d_cal(asset == dow ? dow : asset / dow)),
+         nz(L.qqq_4d_cal(asset == ppg ? ppg : asset / ppg)),
+         nz(L.qqq_4d_cal(asset == alb ? alb : asset / alb)),
+         nz(L.qqq_4d_cal(asset == ce ? ce : asset / ce)),
+         nz(L.qqq_4d_cal(asset == vmhc ? vmhc : asset / vmhc))
+         )
+      
+filter(input)=>
+     input >= 0 ? input : 0
+
+//======================================================
+//xlb bools
+plot_table = input.bool(true)
+
+//=======================================================
+//declaring arrays for tables
+
+//xlb
+names = array.from(
+     "lin", "xlb",
+     "apd", "shw", 
+     "ecl", "dd", 
+     "nue", "fcx",
+     "nem", "dow",
+     "ppg", "alb", 
+     "ce", "vmc"
+  
+     )
+
+
+values = array.from(
+
+     get_rsps(lin), get_rsps(xlb), 
+     get_rsps(apd), get_rsps(shw), 
+     get_rsps(ecl), get_rsps(dd), 
+     get_rsps(nue), get_rsps(fcx),
+     get_rsps(nem), get_rsps(dow), 
+     get_rsps(ppg), get_rsps(alb), get_rsps(ce), get_rsps(vmhc)
+     )
+
+filtered_values = array.from(
+
+     filter(values.get(0)), filter(values.get(1)), 
+     filter(values.get(2)), filter(values.get(3)),
+     filter(values.get(4)), filter(values.get(5)),
+     filter(values.get(6)), filter(values.get(7)), filter(values.get(8)), 
+     filter(values.get(9)), filter(values.get(10)),
+     filter(values.get(11)), filter(values.get(12)), filter(values.get(13))
+
+     )
+max_alloc = filtered_values.sum()
+
+alloc = array.from(
+
+     filtered_values.get(0) / max_alloc, filtered_values.get(1) / max_alloc, 
+     filtered_values.get(2) / max_alloc, filtered_values.get(3) / max_alloc, 
+     filtered_values.get(4) / max_alloc, filtered_values.get(5) / max_alloc, 
+     filtered_values.get(6) / max_alloc, filtered_values.get(7) / max_alloc, filtered_values.get(8) / max_alloc, 
+     filtered_values.get(9) / max_alloc, filtered_values.get(10) / max_alloc,
+     filtered_values.get(11) / max_alloc, filtered_values.get(12) / max_alloc, 
+     filtered_values.get(13) / max_alloc
+     )
+
+roc_alts = array.from(
+     ta.roc(lin, 1) * alloc.get(0)[1], ta.roc(xlb, 1) * alloc.get(1)[1], 
+     ta.roc(apd, 1) * alloc.get(2)[1], ta.roc(shw, 1) * alloc.get(3)[1], 
+     ta.roc(ecl, 1) * alloc.get(4)[1], ta.roc(dd, 1) * alloc.get(5)[1], 
+     ta.roc(nue, 1) * alloc.get(6)[1], ta.roc(fcx, 1) * alloc.get(7)[1],
+     ta.roc(nem, 1) * alloc.get(8)[1], ta.roc(dow, 1) * alloc.get(9)[1],
+     ta.roc(ppg, 1) * alloc.get(10)[1], ta.roc(alb, 1) * alloc.get(11)[1],
+     ta.roc(ce, 1) * alloc.get(12)[1], ta.roc(vmhc, 1) * alloc.get(13)[1]
+     )
+
+
+
+
+//cash
+use_cash = input.bool(false)
+cash = input.int(100)
+
+
+
+get_data2(string input) =>
+    nz(L.deep_1d_cal(request.security(input, timeframe.period, close)))
+get_data3(string input) =>
+    nz(L.deep_1d_cal(request.security(input, timeframe.period, close[13] * -1)))
+
+
+
+
+rsps = array.from(
+
+     math.avg(
+         //benchmark
+  
+         get_data2("XLB * -1"),
+         get_data2("LIN * -1"),
+         get_data2("APD * -1"),
+         get_data2("SHW * -1"),
+         get_data2("ECL * -1"),
+         get_data2("DD * -1"),
+         get_data2("NUE * -1"),
+         get_data2("FCX * -1"),
+         get_data2("NEM * -1"),
+         get_data2("DOW * -1"),
+         get_data2("PPG * -1"),
+         get_data2("ALB * -1"),
+         get_data2("CE * -1"),
+         get_data2("VMC * -1")) * 0.75,
+ 
+
+     math.avg(
+         get_data3("USDWCU + EURWCU + CNYWCU+ JPYWCU"),
+         math.avg(get_data3("T10Y2Y"),
+             get_data3("BAMLH0A0HYM2 * -1")),
+         get_data3("(USGD + USM2 + USCBBS) * USDWCU")) * 0.25
+
+
+     )
+
+//plots
+
+majors_strength = rsps.sum() >= 0.2 ? 0 : filtered_values.avg()
+
+
+color = color.rgb(212, 0, 0, 20)
+
+f1 = plot(0, "midline", #ffffff, 2)
+f2 = plot(majors_strength, "Majors tpi", color, 3)
+fill(f1, f2, color)
+
+
+col_out = majors_strength > 0 ? 1 : 5
+plot(col_out, "color", display = display.none)
+
+
+f3 = plot(0, "midline", #ffffff)
+f4 = plot(rsps.sum() <= 0 ? 0 : rsps.sum() * 0.5, "TPI", color.navy, 2,plot.style_line,true)
+fill(f3, f4, color.new(color.navy, 20))
+
+
+summe = (filter(rsps.sum()) * 0.5 + majors_strength)
+
+cash_alloc = filter(rsps.sum()) * 0.5 / summe
+
+main_alloc = majors_strength / summe
+
+
+// Robustify main_roc calculation and perf update
+main_roc = nz(roc_alts.sum() * main_alloc, 0)
+
+var float perf = 0.2
+perf := perf * (1 + main_roc / 100)
+plot(perf, "Portfolio Performance", color = cash_alloc >= majors_strength ? color.blue : color.red, linewidth=2, force_overlay = true)
+
+
+
+
+//===================================================
+//plot rsps table
+
+//table
+var t = table.new(position.bottom_left, 40, 40, na, na, na, na, na, true)
+
+if plot_table
+
+
+//xlb header
+    t.cell(0, 2, "Materials", text_color = #ffffff)
+    t.merge_cells(0, 2, 2, 2)
+    t.cell(0, 3, "Asset", text_color = #ffffff)
+    t.cell(1, 3, "RSPS Value", text_color = #ffffff)
+    t.cell(2, 3, " ", text_color = #000000)
+    // Cash-Header hinzufügen, wenn benötigt
+    if use_cash
+        table.cell(t, 2, 3, "cash", text_color = #ffffff)
+    else
+        table.cell(t, 2, 3, " ", text_color = #ffffff)
+
+
+
+
+//spacer
+    t.cell(0, 1, "                ")
+    t.cell(0, 12, "                ")
+
+
+     //xlb main table - jetzt mit Cash-Berechnungen in derselben Schleife
+    for c = 0 to 12
+        // Asset-Namen anzeigen
+        table.cell(t, 0, c + 4, rsps.sum() <= 0.2 ? values.get(c) <= -1 ? na :  values.get(c) <= 0.0 ? na : names.get(c) : na, 
+         bgcolor = na, text_color = rsps.sum() <= 0.2 ? values.get(c) <= -1 ? na :  values.get(c) <= 0.0 ? na : values.get(c) <= 0.1 ? color.gray : color.red : na)
+
+        // Prozentuale Allokation anzeigen
+        table.cell(t, 1, c + 4, rsps.sum() <= 0.2 ? values.get(c) <= -1 ? na :  values.get(c) <= 0.0 ? na : str.tostring(math.round(alloc.get(c) * main_alloc * 100, 2)) + "%" : na, 
+         bgcolor = na, text_color = rsps.sum() <= 0.2 ? values.get(c) <= -1 ? na :  values.get(c) <= 0.0 ? na : values.get(c) <= 0.1 ? color.gray : color.red : na)
+
+        // Cash-Wert berechnen und anzeigen, wenn aktiviert
+        if use_cash
+            float the_cash_plot = math.round(alloc.get(c) * main_alloc * cash, 2)
+            table.cell(t, 2, c + 4, rsps.sum() <= 0.2 ? values.get(c) <= -1 ? na :  values.get(c) <= 0.0 ? na : str.tostring(the_cash_plot) : na, 
+             bgcolor = na, text_color = rsps.sum() <= 0.2 ? values.get(c) <= -1 ? na :  values.get(c) <= 0.0 ? na : color.aqua : na)
+
+
+    table.cell(t, 0, 17, "cash", 
+             bgcolor = na,
+             text_color = color.blue)
+
+    // Prozentuale Allokation anzeigen
+    table.cell(t, 1, 17, str.tostring(math.round(cash_alloc * 100, 2)) + "%", bgcolor = na, text_color =  color.blue)
+
+    // Cash-Wert berechnen und anzeigen, wenn aktiviert
+    if use_cash
+        float the_cash_plot = math.round(cash_alloc * cash, 2),
+        table.cell(t, 2, 17, str.tostring(the_cash_plot), text_color = color.blue)

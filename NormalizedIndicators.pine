@@ -1,0 +1,589 @@
+// This Pine Script™ code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © unicorpusstocks
+
+//@version=5
+
+// @description TODO: add library description here
+library("NormalizedIndicators")
+
+
+// @function TODO: add function description here
+// @param x TODO: add parameter x description here
+// @returns TODO: add what function returns
+// @creator TODO: add Indicator-name + Creator-name
+
+
+
+//==============================================================================================================================================================================================================================================================================
+//Trend-following Indicators
+//==============================================================================================================================================================================================================================================================================
+
+
+
+//==============================================================================================================================================================================================================================================================================
+//Trend-following Indicators
+//==============================================================================================================================================================================================================================================================================
+
+
+// @function TODO: True Strength Index
+// @param x TODO: TSI > TSI_EMA bullish, else bearish
+// @returns TODO: bullish = 1 ; bearish = -1
+// @creator TODO: True Strength Index ~ TradingView
+
+
+export TSI (float price, int long, int short, int signal) =>
+	pc = ta.change(price)
+	double_smoothed_pc = ta.ema(ta.ema(pc, long), short)
+	double_smoothed_abs_pc = ta.ema(ta.ema(math.abs(pc), long), short)
+	tsi_value = 100 * (double_smoothed_pc / double_smoothed_abs_pc)
+	tsi_ema = ta.ema(tsi_value, signal)
+	tsi_value >= tsi_ema ? 1 : 0
+
+
+
+
+// @function TODO: Stochastik Momentum Index
+// @param x TODO: SMI > SMI_EMA bullish, else bearish
+// @returns TODO: bullish = 1 ; bearish = -1
+// @creator TODO: Stochastik Momentum Index ~ TradingView
+
+export SMI (float src, int lengthK, int lengthD, int lengthEMA) =>
+    highestHigh = ta.highest(src, lengthK)
+    lowestLow =   ta.lowest(src, lengthK)
+    highestLowestRange = highestHigh - lowestLow
+    relativeRange = src - (highestHigh + lowestLow) / 2
+    smi = 200 * (ta.ema(ta.ema(relativeRange, lengthD), lengthD) / ta.ema(ta.ema(highestLowestRange, lengthD), lengthD))
+    smi_ema = ta.ema(smi, lengthEMA)
+    smi >= smi_ema ? 1 : 0
+
+
+
+
+// @function TODO: Stationary Trendfollowing-Indicator
+// @param x TODO: if positionBetweenBands > 50 bullish, else bearish
+// @returns TODO: bullish = 1 ; bearish = -1
+// @creator TODO: ◭ Bollinger Bands Percent ~ © Algoalpha X © Sushiboi77
+export BBPct(int Length, float Factor, float Source) =>
+
+	//Data
+	lookback = 750
+
+	//calculation
+	var stDevArray = array.new_float(lookback,0.0)
+
+	basis = ta.sma(Source, Length)
+	dev = Factor * ta.dev(Source, Length)
+	upper = basis + dev
+	lower = basis - dev
+	positionBetweenBands = 100 * (Source - lower)/(upper - lower)
+
+	array.push(stDevArray, dev/Source)
+	if array.size(stDevArray)>=lookback
+		array.remove(stDevArray, 0)
+
+	OOOOOOO = array.percentrank(stDevArray, lookback-1)
+	hist = 100*dev/Source
+
+	//out
+	out = positionBetweenBands > 50 ? 1 : -1
+	out
+
+
+
+// @function TODO: non-Stationary Trendfollowing-Indicator
+// @param x TODO: if price > upper-Band := bullish; if price < lower-Band := bearish ; else neutral
+// @returns TODO: bullish = 1 ; bearish = -1 ; neutral = 0
+// @creator TODO: Noro's Trend Ribbon Strategy (SMA-Version) ~ © ROBO_Trading
+export NorosTrendRibbonSMA(simple int Length, float Source) =>
+ 
+    //MA
+	ma = ta.sma(Source, Length)
+    //Price Channel
+    theHigh = ta.highest(ma, Length)
+    theLow = ta.lowest(ma, Length)
+    //out
+	out = 0
+    out := Source > theHigh[1] ? 1 : Source < theLow[1] ? -1 : out[1]
+    out
+
+
+
+// @function TODO: non-Stationary Trendfollowing-Indicator
+// @param x TODO: if price > upper-Band := bullish; if price < lower-Band := bearish ; else neutral
+// @returns TODO: bullish = 1 ; bearish = -1 ; neutral = 0
+// @creator TODO: Noro's Trend Ribbon Strategy (EMA-Version) ~ © ROBO_Trading
+export NorosTrendRibbonEMA(simple int Length, float Source) =>
+ 
+    //MA
+	ma = ta.ema(Source, Length)
+    //Price Channel
+    theHigh = ta.highest(ma, Length)
+    theLow = ta.lowest(ma, Length)
+    //Trend
+	out = 0
+    out := Source > theHigh[1] ? 1 : Source < theLow[1] ? -1 : out[1] 
+    out
+
+
+
+// @function TODO: non-Stationary Trendfollowing-Indicator
+// @param x TODO: if price > all Bands = bullish; if price < all Bands = bearish ; else neutral
+// @returns TODO: bullish = 1 ; bearish = -1 ; neutral = 0
+// @creator TODO: Trend Bands [starlord_xrp] ~ © starlord_xrp
+export TrendBands(float src)=>
+	//EMAs
+	ema9 = ta.ema(src, 9)
+	ema10 = ta.ema(src, 10)
+	ema12 = ta.ema(src, 12)
+	ema14 = ta.ema(src, 14)
+	ema16 = ta.ema(src, 16)
+	ema18 = ta.ema(src, 18)
+	ema20 = ta.ema(src, 20)
+	ema22 = ta.ema(src, 22)
+	ema24 = ta.ema(src, 24)
+	ema26 = ta.ema(src, 26)
+	ema28 = ta.ema(src, 28)
+	ema30 = ta.ema(src, 30)
+
+	//out
+	down = ta.falling(ema9, 1) and ta.falling(ema10, 1) and ta.falling(ema12, 1) and ta.falling(ema14, 1) and ta.falling(ema16, 1) and ta.falling(ema18, 1) and ta.falling(ema20, 1) and ta.falling(ema22, 1) and ta.falling(ema24, 1) and ta.falling(ema26, 1) and ta.falling(ema28, 1) and ta.falling(ema30, 1) ? -1 : 0
+	up = ta.rising(ema9, 1) and ta.rising(ema10, 1) and ta.rising(ema12, 1)  and ta.rising(ema14, 1) and ta.rising(ema16, 1) and ta.rising(ema18, 1) and ta.rising(ema20, 1) and ta.rising(ema22, 1) and ta.rising(ema24, 1) and ta.rising(ema26, 1) and ta.rising(ema28, 1) and ta.rising(ema30, 1) ? 1 : 0
+	out = down + up
+	out
+
+
+
+// @function TODO: non-Stationary Trendfollowing-Indicator
+// @param x TODO: if price > Vidya = bullish; if price < Vidya = bearish ; else neutral
+// @returns TODO: bullish = 1 ; bearish = -1 ; neutral = 0
+// @creator TODO: VIDYA (Variable Index Dynamic Average) [Loxx] ~ © loxx
+export Vidya (float source, int length, int histLength)=>
+
+	//calculations
+	kxxxx = ta.stdev(source, length) / ta.stdev(source, histLength)
+	scxxxxxxxx = 2 / (length + 1)
+	vidya = 0.0
+	vidya := nz(kxxxx * scxxxxxxxx * source + (1 - kxxxx * scxxxxxxxx) * vidya[1], 0)
+
+	//out
+	out = vidya > vidya[1] ? 1 : -1
+	out
+
+
+//VZO calculation
+export VZO(float source, int length, float volumesource) =>
+	
+    Volume_Direction = source > source[1] ? volumesource : -volumesource
+    VZO_volume = ta.ema(Volume_Direction, length)
+    Total_volume = ta.ema(volumesource, length)
+	VZO_zone_chop = 14.9
+    out = (100 * VZO_volume / Total_volume) > VZO_zone_chop ? 1 : (100 * VZO_volume / Total_volume) < -VZO_zone_chop ? -1 : 0
+	out
+
+
+
+// @function TODO: non-Stationary Trendfollowing-Indicator
+// @param x TODO: if uptrend = bullish; if downtrend = bearish ; if neutral = neutral
+// @returns TODO: bullish = 1 ; bearish = -1 ; neutral = 0
+// @creator TODO: Trend Continuation Signals [AlgoAlpha] ~ © AlgoAlpha
+export TrendContinuation(int malen, int malen1, float theclose) =>
+
+    v1 = ta.hma(theclose, malen)
+    v2 = ta.hma(theclose, malen1)
+    
+    uptrend = v1 > v1[1]
+    downtrend = v1 < v1[1]
+    neutral = (uptrend and v2 < v1) or (downtrend and v2 > v1)
+    out = neutral ? 0 : uptrend ? 1 : downtrend ? -1 : na
+    out
+
+
+// @function TODO: non-Stationary Trendfollowing-Indicator
+// @param x TODO: if Shortema < Keyema = bullish; else bearish
+// @returns TODO: bullish = 1 ; bearish = -1
+// @creator TODO: Leonidas Trend Following System ~ © LeonidasCrypto
+export LeonidasTrendFollowingSystem(float src, int shortlen, int keylen) =>
+
+    shortema = ta.ema(src, shortlen)
+    keyema = ta.ema(src, keylen)
+    out = shortema < keyema ? 1 : -1
+    out
+
+
+// @function TODO: non-Stationary Trendfollowing-Indicator
+// @param x TODO: if depth-ema > Keyema = bullish;  if depth-ema < Keyema = bearish; else neutral
+// @returns TODO: bullish = 1 ; bearish = -1 ; neutral = 0
+// @creator TODO: ysantur trendfollower ~ © ysantur
+export ysanturtrendfollower(float src, int depth, int smooth, float bias) =>
+    
+    up = (100 + bias) / 100
+    down = (100 - bias) / 100
+
+    f = array.new_int(depth + 1)
+    a = 1
+    b = 1
+    sum = 0
+
+    for i = 0 to depth
+        array.set(f, i, a+b)
+        a := b
+        b := array.get(f, i)
+        sum := sum + b
+
+    x = 0.0
+    for i = 0 to depth
+        x := x + array.get(f, depth-i) * ta.sma(src, array.get(f, i)) 
+
+    x := x / sum
+    x1 = up * x
+
+    y = ta.ema(x, smooth)
+    y1 = y
+
+    out = x1 > y1 ? 1 : x1 < y1 ? -1 : 0
+    out
+
+
+
+// @function TODO: non-Stationary Trendfollowing-Indicator
+// @param x TODO: if price > TRAMA = bullish;  if price < TRAMA = bearish; else neutral
+// @returns TODO: bullish = 1 ; bearish = -1 ; neutral = 0
+// @creator TODO: Trend Regularity Adaptive Moving Average [LuxAlgo] ~ © LuxAlgo
+export TRAMA(float src, int length) => 
+    ama = 0.
+    hh = math.max(math.sign(ta.change(ta.highest(length))), 0)
+    ll = math.max(math.sign(ta.change(ta.lowest(length)) * -1), 0)
+    tc = math.pow(ta.sma(hh or ll ? 1 : 0, length), 2)
+    ama := nz(ama[1] + tc * (src - ama[1]), src)
+    out = src > ama ? 1 : src < ama ? -1 : 0
+    out
+
+
+
+// @function TODO: Stationary Trendfollowing-Indicator
+// @param x TODO: if RSISma > 50 = bullish;  if RSISma < 50 = bearish; else neutral
+// @returns TODO: bullish = 1 ; bearish = -1 ; neutral = 0
+// @creator TODO: Relative Strength Index ~ © TradingView
+export RSI(int len, float src, int smaLen) =>
+
+	//RSI Calculation
+	up = ta.rma(math.max(ta.change(src), 0), len)
+	down = ta.rma( -math.min(ta.change(src), 0), len)
+	rsi = down == 0 ? 100 : up == 0 ? 0 : 100 - (100 / (1 + up / down))
+	out = ta.sma(rsi, smaLen)
+	Out = out > 50 ?  1 : out < 50 ? -1 : 0
+	Out
+
+
+
+// @function TODO: non-Stationary Trendfollowing-Indicator
+// @param x TODO: if bullishHULL > bearishHULL = bullish;  if bullishHULL < bearishHULL = bearish; else neutral
+// @returns TODO: bullish = 1 ; bearish = -1 ; neutral = 0
+// @creator TODO: Hull Suite ~ © InSilico
+export HullSuite(int _length, float src, float _lengthMult) =>
+
+	//calculation for the Hull Suite
+    len= int(_length*_lengthMult)
+    _hull = ta.hma(src,len)
+	HULL = _hull
+	MHULL = HULL[0]
+	SHULL = HULL[2]
+
+	//TPI meassure
+	out = MHULL > SHULL ? 1 : MHULL < SHULL ? -1 : 0
+	out
+
+
+
+// @function TODO: non-Stationary Trendfollowing-Indicator
+// @param x TODO: if STC expanding = bullish;  if STC contracting = bearish; else neutral
+// @returns TODO: bullish = 1 ; bearish = -1 ; neutral = 0
+// @creator TODO: STC Indicator - A Better MACD [SHK] ~ © shayankm
+export STC(int length, int fastLength, int slowLength, float src) =>
+	//getting values
+	AAA = 0.5
+    var CCCCC = 0.0
+    var DDD = 0.0
+    var DDDDDD = 0.0
+    var STC = 0.0
+    slowMa = ta.ema(src, fastLength) - ta.ema(src, slowLength)
+    CCC = ta.lowest(slowMa, length)
+    CCCC = ta.highest(slowMa, length) - CCC
+    CCCCC := CCCC > 0 ? (slowMa - CCC) / CCCC * 100 : nz(CCCCC[1])
+    DDD := na(DDD[1]) ? CCCCC : DDD[1] + AAA * (CCCCC - DDD[1])
+    DDDD = ta.lowest(DDD, length)
+    DDDDD = ta.highest(DDD, length) - DDDD
+    DDDDDD := DDDDD > 0 ? (DDD - DDDD) / DDDDD * 100 : nz(DDDDDD[1])
+    STC := na(STC[1]) ? DDDDDD : STC[1] + AAA * (DDDDDD - STC[1])
+    STC
+	//STC Value
+	out= STC > STC[1] ? 1 : -1
+	out
+
+
+
+//==============================================================================================================================================================================================================================================================================
+//Calculation Indicators
+// @creator TODO: unicorpusstocks
+//==============================================================================================================================================================================================================================================================================
+
+
+
+// @function TODO: Stationary Correlation-Indicator
+// @param x TODO: Average of multiple correlation-lengths
+// @returns TODO: The long-term Correlation between Input and Compare
+export LCorrelation(float Input, float Compare) =>
+
+	out = math.avg(ta.correlation(Input, Compare, 30), ta.correlation(Input, Compare, 60), ta.correlation(Input, Compare, 90), ta.correlation(Input, Compare, 120), ta.correlation(Input, Compare, 150), ta.correlation(Input, Compare, 180))
+	out
+
+
+
+// @function TODO: Stationary Correlation-Indicator
+// @param x TODO: Average of multiple correlation-lengths
+// @returns TODO: The medium-term Correlation between Input and Compare
+export MCorrelation(float Input, float Compare) =>
+	
+	out = math.avg(ta.correlation(Input, Compare, 15), ta.correlation(Input, Compare, 30), ta.correlation(Input, Compare, 45), ta.correlation(Input, Compare, 60), ta.correlation(Input, Compare, 75), ta.correlation(Input, Compare, 90))
+	out
+
+
+
+// @function TODO: Stationary Beta-Indicator
+// @param x TODO: Average of multiple Beta-lengths
+// @returns TODO: The Beta of measuredSymbol towards baseSymbol
+export assetBeta(float measuredSymbol, float baseSymbol) =>
+
+    //Length Horizons
+    length = 50
+    length1 = 100
+    length2 = 150
+    length3 = 200
+
+
+    //Main Asset
+    retb = baseSymbol/baseSymbol[1] -1 
+    //Beta Measured Asset
+    ret = measuredSymbol/measuredSymbol[1]-1 
+
+
+    secd = ta.stdev(ret, length)
+    secd1 = ta.stdev(ret, length1)
+    secd2 = ta.stdev(ret, length2)
+    secd3 = ta.stdev(ret, length3)
+
+
+    mktd = ta.stdev(retb, length)
+    mktd1 = ta.stdev(retb, length1)
+    mktd2 = ta.stdev(retb, length2)
+    mktd3 = ta.stdev(retb, length3)
+
+
+    correl = ta.correlation(ret, retb, length)
+    correl1 = ta.correlation(ret, retb, length1)
+    correl2 = ta.correlation(ret, retb, length2)
+    correl3 = ta.correlation(ret, retb, length3)
+
+
+    beta =  correl * secd / mktd
+    beta1 =  correl1 * secd1 / mktd1
+    beta2 =  correl2 * secd2 / mktd2
+    beta3 =  correl3 * secd3 / mktd3
+
+
+    out = math.avg(beta, beta1, beta2, beta3)
+    out
+
+
+
+//====================================================================================================================================================================
+//TPI Calibrations
+//====================================================================================================================================================================
+
+export virtual_4d_cal(float src) =>
+    math.avg(
+        //tpi calibration
+         BBPct(20, 2, src),
+         NorosTrendRibbonEMA(7, src), 
+         RSI(4, src, 5),
+         Vidya(src, 30, 9),
+         HullSuite(25, src, 1), 
+         TrendContinuation(25, 12, src),
+         LeonidasTrendFollowingSystem(src, 8, 4),
+         TRAMA(src, 13)
+         )
+
+
+export virtual_1d_cal(float src) =>
+    math.avg(
+        //tpi calibration
+         BBPct(35, 2, src),
+         NorosTrendRibbonEMA(14, src), 
+         RSI(14, src, 8),
+         Vidya(src, 33, 28),
+         HullSuite(25, src, 2), 
+         TrendContinuation(50, 25, src),
+         LeonidasTrendFollowingSystem(src, 15, 11),
+         TRAMA(src, 40)
+         )
+
+//====================================================================================================================================================================
+
+
+export sui_cal(float src) =>
+    math.avg(
+        //tpi calibration
+         BBPct(15, 2, src),
+         NorosTrendRibbonEMA(7, src), 
+         RSI(4, src, 4),
+         Vidya(src, 30, 13),
+         HullSuite(25, src, 1), 
+         TrendContinuation(30, 15, src),
+         LeonidasTrendFollowingSystem(src, 8, 4),
+         TRAMA(src, 16)
+         )
+
+export deep_1d_cal(float src) =>
+    math.avg(
+        //tpi calibration
+         BBPct(34, 2, src),
+         NorosTrendRibbonEMA(13, src), 
+         RSI(13, src, 5),
+         Vidya(src, 41, 25),
+         HullSuite(54, src, 1), 
+         TrendContinuation(54, 28, src),
+         LeonidasTrendFollowingSystem(src, 16, 8),
+         TRAMA(src, 40)
+         )
+
+export wal_1d_cal(float src) =>
+    math.avg(
+        //tpi calibration
+         BBPct(25, 2, src),
+         NorosTrendRibbonEMA(10, src), 
+         RSI(9, src, 4),
+         Vidya(src, 30, 19),
+         HullSuite(45, src, 1), 
+         TrendContinuation(50, 25, src),
+         LeonidasTrendFollowingSystem(src, 12, 7),
+         TRAMA(src, 39)
+         )
+
+export sns_1d_cal(float src) =>
+    math.avg(
+        //tpi calibration
+         BBPct(27, 2, src),
+         NorosTrendRibbonEMA(11, src), 
+         RSI(12, src, 5),
+         Vidya(src, 36, 28),
+         HullSuite(42, src, 1), 
+         TrendContinuation(50, 25, src),
+         LeonidasTrendFollowingSystem(src, 12, 6),
+         TRAMA(src, 35)
+         )
+         
+//====================================================================================================================================================================
+
+
+export meme_cal(float src) =>
+    math.avg(
+        //tpi calibration
+         BBPct(30, 2, src),
+         NorosTrendRibbonEMA(10, src), 
+         RSI(5, src, 10),
+         Vidya(src, 50, 20),
+         HullSuite(28, src, 1), 
+         TrendContinuation(25, 12, src),
+         LeonidasTrendFollowingSystem(src, 13, 6),
+         TRAMA(src, 30)
+         )
+
+//====================================================================================================================================================================
+
+export base_cal(float src) =>
+    math.avg(
+        //tpi calibration
+         BBPct(25, 2, src),
+         NorosTrendRibbonEMA(12, src), 
+         RSI(10, src, 5),
+         Vidya(src, 50, 20),
+         HullSuite(37, src, 1), 
+         TrendContinuation(25, 12, src),
+         LeonidasTrendFollowingSystem(src, 13, 6),
+         TRAMA(src, 40)
+         )
+//====================================================================================================================================================================
+
+export sol_4d_cal(float src) =>
+    math.avg(
+        //tpi calibration
+         BBPct(14, 2, src),
+         NorosTrendRibbonEMA(5, src), 
+         RSI(2, src, 6),
+         Vidya(src, 17, 8),
+         HullSuite(20, src, 1), 
+         TrendContinuation(20, 10, src),
+         LeonidasTrendFollowingSystem(src, 8, 5),
+         TRAMA(src, 11)
+         )
+
+
+export sol_meme_4d_cal(float src) =>
+    math.avg(
+        //tpi calibration
+         BBPct(14, 2, src),
+         NorosTrendRibbonEMA(5, src), 
+         RSI(6, src, 6),
+         Vidya(src, 30, 16),
+         HullSuite(30, src, 1), 
+         TrendContinuation(25, 10, src),
+         LeonidasTrendFollowingSystem(src, 10, 5),
+         TRAMA(src, 15)
+         )
+//====================================================================================================================================================================
+
+
+export eth_4d_cal(float src) =>
+    math.avg(
+        //tpi calibration
+         BBPct(21, 2, src),
+         NorosTrendRibbonEMA(6, src), 
+         RSI(4, src, 8),
+         TSI(src, 16, 14, 16),
+         HullSuite(25, src, 1), 
+         TrendContinuation(30, 15, src),
+         LeonidasTrendFollowingSystem(src, 10, 6),
+         SMI(src, 7, 6, 3)
+
+         )
+
+//====================================================================================================================================================================
+
+export btc_4d_cal(float src) =>
+    math.avg(
+        //tpi calibration
+         BBPct(28, 2, src),
+         NorosTrendRibbonEMA(10, src), 
+         RSI(6, src, 4),
+         Vidya(src, 30, 19),
+         HullSuite(55, src, 1), 
+         TrendContinuation(40, 20, src),
+         LeonidasTrendFollowingSystem(src, 12, 6),
+         TRAMA(src, 33)
+         )
+
+
+//====================================================================================================================================================================
+
+export qqq_4d_cal(float src) =>
+    math.avg(
+        //tpi calibration
+         BBPct(45, 2, src),
+         NorosTrendRibbonEMA(18, src), 
+         RSI(12, src, 5),
+         Vidya(src, 30, 18),
+         HullSuite(42, src, 1), 
+         TrendContinuation(50, 25, src),
+         LeonidasTrendFollowingSystem(src, 17, 6),
+         TRAMA(src, 50)
+         )

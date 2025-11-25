@@ -1,0 +1,105 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © unicorpusstocks
+
+//@version=6
+indicator("RSPS 5 Strategies Combiner", max_bars_back = 10)
+
+
+
+
+strategy1 = nz(input.source(close)) 
+strategy1 := strategy1 == close ? 0 : strategy1
+strategy1_roc = nz(input.source(close)) 
+strategy1_roc := strategy1_roc == close ? 0 : strategy1_roc
+
+strategy2 = nz(input.source(close)) 
+strategy2 := strategy2 == close ? 0 : strategy2
+strategy2_roc = nz(input.source(close)) 
+strategy2_roc := strategy2_roc == close ? 0 : strategy2_roc
+
+strategy3 = nz(input.source(close)) 
+strategy3 := strategy3 == close ? 0 : strategy3
+strategy3_roc = nz(input.source(close)) 
+strategy3_roc := strategy3_roc == close ? 0 : strategy3_roc
+
+strategy4 = nz(input.source(close)) 
+strategy4 := strategy4 == close ? 0 : strategy4
+strategy4_roc = nz(input.source(close)) 
+strategy4_roc := strategy4_roc == close ? 0 : strategy4_roc
+
+strategy5 = nz(input.source(close)) 
+strategy5 := strategy5 == close ? 0 : strategy5
+strategy5_roc = nz(input.source(close)) 
+strategy5_roc := strategy5_roc == close ? 0 : strategy5_roc
+
+
+use_cash = input.bool(false)
+cash = input.float(100.0)
+start_value = input.float(100, "Start Portfolio Value")
+
+max_val = strategy1 + strategy2 + strategy3 + strategy4 + strategy5
+
+
+alloc = array.from(
+
+     strategy1 / max_val,
+     strategy2 / max_val, 
+     strategy3 / max_val, 
+     strategy4 / max_val,
+     strategy5 / max_val
+     )
+
+var combiner_table = table.new(position.middle_left, 20, 20, na, na, 2, na, 2, true)
+
+combiner_table.cell(0, 0, "RSPS 5 Strategies", text_color = #ffffff)
+combiner_table.merge_cells(0, 0, 1, 0)
+
+
+strings = array.from("Strategy 1", "Strategy 2", "Strategy 3", "Strategy 4", "Strategy 5")
+text_col = array.from(color.orange, color.aqua, color.purple, color.yellow, color.lime)
+
+
+for c = 0 to 4
+    combiner_table.cell(0, c + 1, strings.get(c), text_color = text_col.get(c))
+    combiner_table.cell(1, c + 1, str.tostring(math.round(alloc.get(c) * 100, 3)) + "%", text_color = text_col.get(c))
+    combiner_table.cell(2, c + 1, use_cash ? str.tostring(math.round(alloc.get(c) * cash, 2)) : na, text_color = use_cash ? text_col.get(c) : na)
+
+
+roc = array.from(
+      strategy1_roc * alloc.get(0),
+      strategy2_roc * alloc.get(1),
+      strategy3_roc * alloc.get(2),
+      strategy4_roc * alloc.get(3),
+      strategy5_roc * alloc.get(4)
+      )
+
+
+color_out = 
+     alloc.max() == alloc.get(0) ? 1 :
+     alloc.max() == alloc.get(1) ? 2 :
+     alloc.max() == alloc.get(2) ? 3 :
+     alloc.max() == alloc.get(3) ? 4 :
+     alloc.max() == alloc.get(4) ? 5 : na
+
+plot_color = 
+     color_out == 1 ? color.orange :
+     color_out == 2 ? color.aqua :
+     color_out == 3 ? color.purple :
+     color_out == 4 ? color.yellow :
+     color_out == 5 ? color.lime : color.navy
+
+// === PORTFOLIO VALUE CALCULATION ===
+var float portfolio_value = na
+
+if barstate.isfirst
+    portfolio_value := start_value
+else
+    portfolio_value := portfolio_value * (1 + roc.sum() / 100)
+
+// === PLOTS ===
+f1 = plot(portfolio_value, title="Portfolio Value", color = plot_color, linewidth = 2) 
+f2 = plot(portfolio_value - (portfolio_value * 0.5), "0", na)
+fill(f1, f2, color.new(plot_color, 95))
+
+plot(roc.sum(), "Portfolio ROC", display = display.none)
+plot(color_out, "color", display = display.none)

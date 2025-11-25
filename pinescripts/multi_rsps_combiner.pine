@@ -1,0 +1,478 @@
+// This Pine Script® code is subject to the terms of the Mozilla Public License 2.0 at https://mozilla.org/MPL/2.0/
+// © unicorpusstocks
+
+//@version=5
+indicator("Multi RSPS Combiner", max_bars_back = 100, overlay=false)
+
+import Unicorpus/NormalizedIndicators/1 as L
+
+// ============================================
+// INPUTS - Select which RSPS strategies to combine
+// ============================================
+use_tech = input.bool(true, "Technology")
+use_fin = input.bool(true, "Financials")
+use_comm = input.bool(true, "Communication")
+use_cons = input.bool(true, "Consumer Discretionary")
+use_commodities = input.bool(false, "Commodities")
+
+// Cash settings
+use_cash = input.bool(true, "Use Cash")
+cash = input.int(10000, "Total Cash", minval=100)
+plot_table = input.bool(true, "Show Table")
+
+// ============================================
+// GET DATA FUNCTION
+// ============================================
+get_data(string input) =>
+    request.security(input, timeframe.period, close)
+
+// ============================================
+// TECHNOLOGY ASSETS (10)
+// ============================================
+tech_aapl = use_tech ? get_data("AAPL") : 0.0
+tech_msft = use_tech ? get_data("MSFT") : 0.0
+tech_nvda = use_tech ? get_data("NVDA") : 0.0
+tech_avgo = use_tech ? get_data("AVGO") : 0.0
+tech_crm = use_tech ? get_data("CRM") : 0.0
+tech_orcl = use_tech ? get_data("ORCL") : 0.0
+tech_adbe = use_tech ? get_data("ADBE") : 0.0
+tech_amd = use_tech ? get_data("AMD") : 0.0
+tech_intc = use_tech ? get_data("INTC") : 0.0
+tech_now = use_tech ? get_data("NOW") : 0.0
+
+// ============================================
+// FINANCIALS ASSETS (10)
+// ============================================
+fin_brk_b = use_fin ? get_data("BRK.B") : 0.0
+fin_jpm = use_fin ? get_data("JPM") : 0.0
+fin_bac = use_fin ? get_data("BAC") : 0.0
+fin_wfc = use_fin ? get_data("WFC") : 0.0
+fin_ms = use_fin ? get_data("MS") : 0.0
+fin_gs = use_fin ? get_data("GS") : 0.0
+fin_axp = use_fin ? get_data("AXP") : 0.0
+fin_c = use_fin ? get_data("C") : 0.0
+fin_schw = use_fin ? get_data("SCHW") : 0.0
+fin_blk = use_fin ? get_data("BLK") : 0.0
+
+// ============================================
+// COMMUNICATION ASSETS (10)
+// ============================================
+comm_meta = use_comm ? get_data("META") : 0.0
+comm_googl = use_comm ? get_data("GOOGL") : 0.0
+comm_nflx = use_comm ? get_data("NFLX") : 0.0
+comm_dis = use_comm ? get_data("DIS") : 0.0
+comm_t = use_comm ? get_data("T") : 0.0
+comm_vz = use_comm ? get_data("VZ") : 0.0
+comm_tmus = use_comm ? get_data("TMUS") : 0.0
+comm_ea = use_comm ? get_data("EA") : 0.0
+comm_ttwo = use_comm ? get_data("TTWO") : 0.0
+comm_cmcsa = use_comm ? get_data("CMCSA") : 0.0
+
+// ============================================
+// CONSUMER DISCRETIONARY ASSETS (10)
+// ============================================
+cons_amzn = use_cons ? get_data("AMZN") : 0.0
+cons_tsla = use_cons ? get_data("TSLA") : 0.0
+cons_hd = use_cons ? get_data("HD") : 0.0
+cons_mcd = use_cons ? get_data("MCD") : 0.0
+cons_nke = use_cons ? get_data("NKE") : 0.0
+cons_sbux = use_cons ? get_data("SBUX") : 0.0
+cons_gm = use_cons ? get_data("GM") : 0.0
+cons_low = use_cons ? get_data("LOW") : 0.0
+cons_tjx = use_cons ? get_data("TJX") : 0.0
+cons_bkng = use_cons ? get_data("BKNG") : 0.0
+
+// Total: 40 assets max
+
+// ============================================
+// RSPS CALCULATION FUNCTION (ALL vs ALL)
+// ============================================
+get_rsps(asset) =>
+    math.avg(
+        // Technology
+        use_tech ? nz(L.qqq_4d_cal(asset == tech_aapl ? tech_aapl : asset / tech_aapl)) : na,
+        use_tech ? nz(L.qqq_4d_cal(asset == tech_msft ? tech_msft : asset / tech_msft)) : na,
+        use_tech ? nz(L.qqq_4d_cal(asset == tech_nvda ? tech_nvda : asset / tech_nvda)) : na,
+        use_tech ? nz(L.qqq_4d_cal(asset == tech_avgo ? tech_avgo : asset / tech_avgo)) : na,
+        use_tech ? nz(L.qqq_4d_cal(asset == tech_crm ? tech_crm : asset / tech_crm)) : na,
+        use_tech ? nz(L.qqq_4d_cal(asset == tech_orcl ? tech_orcl : asset / tech_orcl)) : na,
+        use_tech ? nz(L.qqq_4d_cal(asset == tech_adbe ? tech_adbe : asset / tech_adbe)) : na,
+        use_tech ? nz(L.qqq_4d_cal(asset == tech_amd ? tech_amd : asset / tech_amd)) : na,
+        use_tech ? nz(L.qqq_4d_cal(asset == tech_intc ? tech_intc : asset / tech_intc)) : na,
+        use_tech ? nz(L.qqq_4d_cal(asset == tech_now ? tech_now : asset / tech_now)) : na,
+        // Financials
+        use_fin ? nz(L.qqq_4d_cal(asset == fin_brk_b ? fin_brk_b : asset / fin_brk_b)) : na,
+        use_fin ? nz(L.qqq_4d_cal(asset == fin_jpm ? fin_jpm : asset / fin_jpm)) : na,
+        use_fin ? nz(L.qqq_4d_cal(asset == fin_bac ? fin_bac : asset / fin_bac)) : na,
+        use_fin ? nz(L.qqq_4d_cal(asset == fin_wfc ? fin_wfc : asset / fin_wfc)) : na,
+        use_fin ? nz(L.qqq_4d_cal(asset == fin_ms ? fin_ms : asset / fin_ms)) : na,
+        use_fin ? nz(L.qqq_4d_cal(asset == fin_gs ? fin_gs : asset / fin_gs)) : na,
+        use_fin ? nz(L.qqq_4d_cal(asset == fin_axp ? fin_axp : asset / fin_axp)) : na,
+        use_fin ? nz(L.qqq_4d_cal(asset == fin_c ? fin_c : asset / fin_c)) : na,
+        use_fin ? nz(L.qqq_4d_cal(asset == fin_schw ? fin_schw : asset / fin_schw)) : na,
+        use_fin ? nz(L.qqq_4d_cal(asset == fin_blk ? fin_blk : asset / fin_blk)) : na,
+        // Communication
+        use_comm ? nz(L.qqq_4d_cal(asset == comm_meta ? comm_meta : asset / comm_meta)) : na,
+        use_comm ? nz(L.qqq_4d_cal(asset == comm_googl ? comm_googl : asset / comm_googl)) : na,
+        use_comm ? nz(L.qqq_4d_cal(asset == comm_nflx ? comm_nflx : asset / comm_nflx)) : na,
+        use_comm ? nz(L.qqq_4d_cal(asset == comm_dis ? comm_dis : asset / comm_dis)) : na,
+        use_comm ? nz(L.qqq_4d_cal(asset == comm_t ? comm_t : asset / comm_t)) : na,
+        use_comm ? nz(L.qqq_4d_cal(asset == comm_vz ? comm_vz : asset / comm_vz)) : na,
+        use_comm ? nz(L.qqq_4d_cal(asset == comm_tmus ? comm_tmus : asset / comm_tmus)) : na,
+        use_comm ? nz(L.qqq_4d_cal(asset == comm_ea ? comm_ea : asset / comm_ea)) : na,
+        use_comm ? nz(L.qqq_4d_cal(asset == comm_ttwo ? comm_ttwo : asset / comm_ttwo)) : na,
+        use_comm ? nz(L.qqq_4d_cal(asset == comm_cmcsa ? comm_cmcsa : asset / comm_cmcsa)) : na,
+        // Consumer Discretionary
+        use_cons ? nz(L.qqq_4d_cal(asset == cons_amzn ? cons_amzn : asset / cons_amzn)) : na,
+        use_cons ? nz(L.qqq_4d_cal(asset == cons_tsla ? cons_tsla : asset / cons_tsla)) : na,
+        use_cons ? nz(L.qqq_4d_cal(asset == cons_hd ? cons_hd : asset / cons_hd)) : na,
+        use_cons ? nz(L.qqq_4d_cal(asset == cons_mcd ? cons_mcd : asset / cons_mcd)) : na,
+        use_cons ? nz(L.qqq_4d_cal(asset == cons_nke ? cons_nke : asset / cons_nke)) : na,
+        use_cons ? nz(L.qqq_4d_cal(asset == cons_sbux ? cons_sbux : asset / cons_sbux)) : na,
+        use_cons ? nz(L.qqq_4d_cal(asset == cons_gm ? cons_gm : asset / cons_gm)) : na,
+        use_cons ? nz(L.qqq_4d_cal(asset == cons_low ? cons_low : asset / cons_low)) : na,
+        use_cons ? nz(L.qqq_4d_cal(asset == cons_tjx ? cons_tjx : asset / cons_tjx)) : na,
+        use_cons ? nz(L.qqq_4d_cal(asset == cons_bkng ? cons_bkng : asset / cons_bkng)) : na
+    )
+
+// ============================================
+// FILTER FUNCTION
+// ============================================
+filter(input) =>
+    input >= 0 ? input : 0
+
+// ============================================
+// CALCULATE RSPS VALUES FOR ALL ASSETS
+// ============================================
+// Technology
+tech_values = use_tech ? array.from(
+    get_rsps(tech_aapl), get_rsps(tech_msft), get_rsps(tech_nvda),
+    get_rsps(tech_avgo), get_rsps(tech_crm), get_rsps(tech_orcl),
+    get_rsps(tech_adbe), get_rsps(tech_amd), get_rsps(tech_intc),
+    get_rsps(tech_now)
+) : array.new<float>()
+
+tech_names = array.from("aapl", "msft", "nvda", "avgo", "crm", "orcl", "adbe", "amd", "intc", "now")
+
+// Financials
+fin_values = use_fin ? array.from(
+    get_rsps(fin_brk_b), get_rsps(fin_jpm), get_rsps(fin_bac),
+    get_rsps(fin_wfc), get_rsps(fin_ms), get_rsps(fin_gs),
+    get_rsps(fin_axp), get_rsps(fin_c), get_rsps(fin_schw),
+    get_rsps(fin_blk)
+) : array.new<float>()
+
+fin_names = array.from("brk.b", "jpm", "bac", "wfc", "ms", "gs", "axp", "c", "schw", "blk")
+
+// Communication
+comm_values = use_comm ? array.from(
+    get_rsps(comm_meta), get_rsps(comm_googl), get_rsps(comm_nflx),
+    get_rsps(comm_dis), get_rsps(comm_t), get_rsps(comm_vz),
+    get_rsps(comm_tmus), get_rsps(comm_ea), get_rsps(comm_ttwo),
+    get_rsps(comm_cmcsa)
+) : array.new<float>()
+
+comm_names = array.from("meta", "googl", "nflx", "dis", "t", "vz", "tmus", "ea", "ttwo", "cmcsa")
+
+// Consumer Discretionary
+cons_values = use_cons ? array.from(
+    get_rsps(cons_amzn), get_rsps(cons_tsla), get_rsps(cons_hd),
+    get_rsps(cons_mcd), get_rsps(cons_nke), get_rsps(cons_sbux),
+    get_rsps(cons_gm), get_rsps(cons_low), get_rsps(cons_tjx),
+    get_rsps(cons_bkng)
+) : array.new<float>()
+
+cons_names = array.from("amzn", "tsla", "hd", "mcd", "nke", "sbux", "gm", "low", "tjx", "bkng")
+
+// ============================================
+// COMBINE ALL VALUES AND NAMES
+// ============================================
+var all_values = array.new<float>()
+var all_names = array.new<string>()
+var all_prices = array.new<float>()
+var all_sectors = array.new<int>()
+
+all_values.clear()
+all_names.clear()
+all_prices.clear()
+all_sectors.clear()
+
+if use_tech
+    array.concat(all_values, tech_values)
+    array.concat(all_names, tech_names)
+    for i = 0 to 9
+        all_sectors.push(1)
+    all_prices.push(tech_aapl)
+    all_prices.push(tech_msft)
+    all_prices.push(tech_nvda)
+    all_prices.push(tech_avgo)
+    all_prices.push(tech_crm)
+    all_prices.push(tech_orcl)
+    all_prices.push(tech_adbe)
+    all_prices.push(tech_amd)
+    all_prices.push(tech_intc)
+    all_prices.push(tech_now)
+
+if use_fin
+    array.concat(all_values, fin_values)
+    array.concat(all_names, fin_names)
+    for i = 0 to 9
+        all_sectors.push(2)
+    all_prices.push(fin_brk_b)
+    all_prices.push(fin_jpm)
+    all_prices.push(fin_bac)
+    all_prices.push(fin_wfc)
+    all_prices.push(fin_ms)
+    all_prices.push(fin_gs)
+    all_prices.push(fin_axp)
+    all_prices.push(fin_c)
+    all_prices.push(fin_schw)
+    all_prices.push(fin_blk)
+
+if use_comm
+    array.concat(all_values, comm_values)
+    array.concat(all_names, comm_names)
+    for i = 0 to 9
+        all_sectors.push(3)
+    all_prices.push(comm_meta)
+    all_prices.push(comm_googl)
+    all_prices.push(comm_nflx)
+    all_prices.push(comm_dis)
+    all_prices.push(comm_t)
+    all_prices.push(comm_vz)
+    all_prices.push(comm_tmus)
+    all_prices.push(comm_ea)
+    all_prices.push(comm_ttwo)
+    all_prices.push(comm_cmcsa)
+
+if use_cons
+    array.concat(all_values, cons_values)
+    array.concat(all_names, cons_names)
+    for i = 0 to 9
+        all_sectors.push(4)
+    all_prices.push(cons_amzn)
+    all_prices.push(cons_tsla)
+    all_prices.push(cons_hd)
+    all_prices.push(cons_mcd)
+    all_prices.push(cons_nke)
+    all_prices.push(cons_sbux)
+    all_prices.push(cons_gm)
+    all_prices.push(cons_low)
+    all_prices.push(cons_tjx)
+    all_prices.push(cons_bkng)
+
+// ============================================
+// FILTER AND ALLOCATE
+// ============================================
+var filtered_values = array.new<float>()
+filtered_values.clear()
+
+for i = 0 to all_values.size() - 1
+    filtered_values.push(filter(all_values.get(i)))
+
+max_alloc = filtered_values.sum()
+
+var alloc = array.new<float>()
+alloc.clear()
+
+for i = 0 to filtered_values.size() - 1
+    alloc.push(max_alloc > 0 ? filtered_values.get(i) / max_alloc : 0)
+
+// ============================================
+// ROC CALCULATIONS (Individual for each asset)
+// ============================================
+var roc_tech = array.new<float>()
+var roc_fin = array.new<float>()
+var roc_comm = array.new<float>()
+var roc_cons = array.new<float>()
+
+roc_tech.clear()
+roc_fin.clear()
+roc_comm.clear()
+roc_cons.clear()
+
+if use_tech
+    roc_tech := array.from(
+        ta.roc(tech_aapl, 1), ta.roc(tech_msft, 1), ta.roc(tech_nvda, 1),
+        ta.roc(tech_avgo, 1), ta.roc(tech_crm, 1), ta.roc(tech_orcl, 1),
+        ta.roc(tech_adbe, 1), ta.roc(tech_amd, 1), ta.roc(tech_intc, 1),
+        ta.roc(tech_now, 1)
+    )
+
+if use_fin
+    roc_fin := array.from(
+        ta.roc(fin_brk_b, 1), ta.roc(fin_jpm, 1), ta.roc(fin_bac, 1),
+        ta.roc(fin_wfc, 1), ta.roc(fin_ms, 1), ta.roc(fin_gs, 1),
+        ta.roc(fin_axp, 1), ta.roc(fin_c, 1), ta.roc(fin_schw, 1),
+        ta.roc(fin_blk, 1)
+    )
+
+if use_comm
+    roc_comm := array.from(
+        ta.roc(comm_meta, 1), ta.roc(comm_googl, 1), ta.roc(comm_nflx, 1),
+        ta.roc(comm_dis, 1), ta.roc(comm_t, 1), ta.roc(comm_vz, 1),
+        ta.roc(comm_tmus, 1), ta.roc(comm_ea, 1), ta.roc(comm_ttwo, 1),
+        ta.roc(comm_cmcsa, 1)
+    )
+
+if use_cons
+    roc_cons := array.from(
+        ta.roc(cons_amzn, 1), ta.roc(cons_tsla, 1), ta.roc(cons_hd, 1),
+        ta.roc(cons_mcd, 1), ta.roc(cons_nke, 1), ta.roc(cons_sbux, 1),
+        ta.roc(cons_gm, 1), ta.roc(cons_low, 1), ta.roc(cons_tjx, 1),
+        ta.roc(cons_bkng, 1)
+    )
+
+// Combine all ROC values
+var all_roc = array.new<float>()
+all_roc.clear()
+
+if use_tech
+    array.concat(all_roc, roc_tech)
+if use_fin
+    array.concat(all_roc, roc_fin)
+if use_comm
+    array.concat(all_roc, roc_comm)
+if use_cons
+    array.concat(all_roc, roc_cons)
+
+// Apply allocation weights
+var roc_values = array.new<float>()
+roc_values.clear()
+
+for i = 0 to all_roc.size() - 1
+    roc_values.push(nz(all_roc.get(i) * nz(alloc.get(i)[1], 0), 0))
+
+// ============================================
+// TPI CALCULATION (Combined Macro)
+// ============================================
+get_data3(string input) =>
+    nz(L.deep_1d_cal(request.security(input, timeframe.period, close[13] * -1)))
+
+tpi_tech = use_tech ? math.avg(
+    nz(L.deep_1d_cal(tech_aapl * -1)), nz(L.deep_1d_cal(tech_msft * -1)), nz(L.deep_1d_cal(tech_nvda * -1)),
+    nz(L.deep_1d_cal(tech_avgo * -1)), nz(L.deep_1d_cal(tech_crm * -1)), nz(L.deep_1d_cal(tech_orcl * -1)),
+    nz(L.deep_1d_cal(tech_adbe * -1)), nz(L.deep_1d_cal(tech_amd * -1)), nz(L.deep_1d_cal(tech_intc * -1)),
+    nz(L.deep_1d_cal(tech_now * -1))
+) : 0.0
+
+tpi_fin = use_fin ? math.avg(
+    nz(L.deep_1d_cal(fin_brk_b * -1)), nz(L.deep_1d_cal(fin_jpm * -1)), nz(L.deep_1d_cal(fin_bac * -1)),
+    nz(L.deep_1d_cal(fin_wfc * -1)), nz(L.deep_1d_cal(fin_ms * -1)), nz(L.deep_1d_cal(fin_gs * -1)),
+    nz(L.deep_1d_cal(fin_axp * -1)), nz(L.deep_1d_cal(fin_c * -1)), nz(L.deep_1d_cal(fin_schw * -1)),
+    nz(L.deep_1d_cal(fin_blk * -1))
+) : 0.0
+
+tpi_comm = use_comm ? math.avg(
+    nz(L.deep_1d_cal(comm_meta * -1)), nz(L.deep_1d_cal(comm_googl * -1)), nz(L.deep_1d_cal(comm_nflx * -1)),
+    nz(L.deep_1d_cal(comm_dis * -1)), nz(L.deep_1d_cal(comm_t * -1)), nz(L.deep_1d_cal(comm_vz * -1)),
+    nz(L.deep_1d_cal(comm_tmus * -1)), nz(L.deep_1d_cal(comm_ea * -1)), nz(L.deep_1d_cal(comm_ttwo * -1)),
+    nz(L.deep_1d_cal(comm_cmcsa * -1))
+) : 0.0
+
+tpi_cons = use_cons ? math.avg(
+    nz(L.deep_1d_cal(cons_amzn * -1)), nz(L.deep_1d_cal(cons_tsla * -1)), nz(L.deep_1d_cal(cons_hd * -1)),
+    nz(L.deep_1d_cal(cons_mcd * -1)), nz(L.deep_1d_cal(cons_nke * -1)), nz(L.deep_1d_cal(cons_sbux * -1)),
+    nz(L.deep_1d_cal(cons_gm * -1)), nz(L.deep_1d_cal(cons_low * -1)), nz(L.deep_1d_cal(cons_tjx * -1)),
+    nz(L.deep_1d_cal(cons_bkng * -1))
+) : 0.0
+
+// Count active sectors
+active_sectors = (use_tech ? 1 : 0) + (use_fin ? 1 : 0) + (use_comm ? 1 : 0) + (use_cons ? 1 : 0)
+sector_weight = active_sectors > 0 ? 0.75 / active_sectors : 0
+
+tpi_assets = (tpi_tech + tpi_fin + tpi_comm + tpi_cons) * sector_weight
+
+tpi_macro = math.avg(
+    get_data3("USDWCU + EURWCU + CNYWCU + JPYWCU"),
+    math.avg(get_data3("T10Y2Y"), get_data3("BAMLH0A0HYM2 * -1")),
+    get_data3("(USGD + USM2 + USCBBS) * USDWCU")
+) * 0.25
+
+tpi_total = tpi_assets * 0.75 + tpi_macro
+
+majors_strength = tpi_total >= 0.2 ? 0 : filtered_values.avg()
+cash_strength = tpi_total <= 0 ? 0 : tpi_total * 0.5
+
+summe = cash_strength + majors_strength
+cash_alloc = summe > 0 ? cash_strength / summe : 0
+main_alloc = summe > 0 ? majors_strength / summe : 0
+
+// ============================================
+// PORTFOLIO PERFORMANCE
+// ============================================
+main_roc = nz(roc_values.sum() * main_alloc, 0)
+
+var float perf = 10
+perf := perf * (1 + main_roc / 100)
+
+// ============================================
+// PLOTS
+// ============================================
+f1 = plot(0, "midline", #ffffff, 2)
+f2 = plot(majors_strength, "Assets Strength", color.red, 3)
+fill(f1, f2, color.new(color.red, 80))
+
+f3 = plot(0, "midline", #ffffff)
+f4 = plot(cash_strength, "Cash TPI", color.navy, 2)
+fill(f3, f4, color.new(color.navy, 80))
+
+plot(perf, "Portfolio Value", color = cash_alloc >= main_alloc ? color.blue : color.orange, linewidth=3)
+
+// ============================================
+// TABLE DISPLAY
+// ============================================
+var multi_table = table.new(position.bottom_left, 6, 25, na, na, na, na, na, true)
+
+if plot_table
+    // Header Left Side
+    multi_table.cell(0, 0, "Portfolio (1-20)", text_color = #ffffff, bgcolor = color.new(color.blue, 50))
+    multi_table.merge_cells(0, 0, 2, 0)
+    multi_table.cell(0, 1, "Asset", text_color = #ffffff)
+    multi_table.cell(1, 1, "Alloc %", text_color = #ffffff)
+    multi_table.cell(2, 1, use_cash ? "Cash" : " ", text_color = #ffffff)
+    
+    // Header Right Side
+    multi_table.cell(3, 0, "Portfolio (21-40)", text_color = #ffffff, bgcolor = color.new(color.blue, 50))
+    multi_table.merge_cells(3, 0, 5, 0)
+    multi_table.cell(3, 1, "Asset", text_color = #ffffff)
+    multi_table.cell(4, 1, "Alloc %", text_color = #ffffff)
+    multi_table.cell(5, 1, use_cash ? "Cash" : " ", text_color = #ffffff)
+    
+    // Assets
+    int left_row = 2
+    int right_row = 2
+    
+    for i = 0 to math.min(all_values.size() - 1, 40)
+        if all_values.get(i) > 0
+            // Sector colors
+            sector = all_sectors.get(i)
+            asset_color = sector == 1 ? color.orange : sector == 2 ? color.green : sector == 3 ? color.purple : color.aqua
+            weak_color = sector == 1 ? color.new(color.orange, 50) : sector == 2 ? color.new(color.green, 50) : sector == 3 ? color.new(color.purple, 50) : color.new(color.aqua, 50)
+            
+            // First 20 assets on left side
+            if i < 20
+                multi_table.cell(0, left_row, all_names.get(i), 
+                    text_color = all_values.get(i) > 0.1 ? asset_color : weak_color)
+                multi_table.cell(1, left_row, str.tostring(math.round(alloc.get(i) * main_alloc * 100, 2)) + "%",
+                    text_color = all_values.get(i) > 0.1 ? asset_color : weak_color)
+                if use_cash
+                    cash_value = math.round(alloc.get(i) * main_alloc * cash, 2)
+                    multi_table.cell(2, left_row, str.tostring(cash_value), text_color = asset_color)
+                left_row += 1
+            // Assets 21-40 on right side
+            else
+                multi_table.cell(3, right_row, all_names.get(i), 
+                    text_color = all_values.get(i) > 0.1 ? asset_color : weak_color)
+                multi_table.cell(4, right_row, str.tostring(math.round(alloc.get(i) * main_alloc * 100, 2)) + "%",
+                    text_color = all_values.get(i) > 0.1 ? asset_color : weak_color)
+                if use_cash
+                    cash_value = math.round(alloc.get(i) * main_alloc * cash, 2)
+                    multi_table.cell(5, right_row, str.tostring(cash_value), text_color = asset_color)
+                right_row += 1
+    
+    // Cash row on left side
+    multi_table.cell(0, left_row, "CASH", text_color = color.blue)
+    multi_table.cell(1, left_row, str.tostring(math.round(cash_alloc * 100, 2)) + "%", text_color = color.blue)
+    if use_cash
+        multi_table.cell(2, left_row, str.tostring(math.round(cash_alloc * cash, 2)), text_color = color.blue)
